@@ -43,7 +43,7 @@ class Phasor {
 };
 
 
-float sin7(float x) {
+inline float sin7(float x) {
     // 7 multiplies + 7 addition/subtraction
     // 14 operations
     return x * (x * (x * (x * (x * (x * (66.5723768716453 * x - 233.003319050759) + 275.754490892928) - 106.877929605423) + 0.156842000875713) - 9.85899292126983) + 7.25653181200263) - 8.88178419700125e-16;

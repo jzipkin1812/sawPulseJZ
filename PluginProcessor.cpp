@@ -39,10 +39,10 @@ AudioPluginAudioProcessor::createParameterLayout()
 
     // Saw, Square, or Impulse?
     params.push_back(std::make_unique<juce::AudioParameterChoice>(
-    "waveform",
-    "Waveform",
-    juce::StringArray { "Saw", "Pulse", "Square" },
-    0 // default = Saw
+        "waveform",
+        "Waveform",
+        juce::StringArray { "Saw", "Pulse" },
+        0 // default = Saw
     ));
 
     return { params.begin(), params.end() };
@@ -177,38 +177,26 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     juce::ignoreUnused (midiMessages);
 
     juce::ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels  = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
+    int totalNumInputChannels  = getTotalNumInputChannels();
+    int totalNumOutputChannels = getTotalNumOutputChannels();
 
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+    // Clear output channels with no input
+    for (int i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-
+    // Parameter processing
     // Set frequency
     FREQUENCY_HZ = apvts.getRawParameterValue("frequency")->load();
     phasor.frequency(FREQUENCY_HZ);
     // Set gain
-    auto gainDb = apvts.getRawParameterValue("outputGain")->load();
+    float gainDb = apvts.getRawParameterValue("outputGain")->load();
     float gainLinear = juce::Decibels::decibelsToGain(gainDb);
     // Set scalar for harmonics
     float betaSliderScalar = apvts.getRawParameterValue("filter")->load();
-    // Saw, Impulse, Square?
+    // Which waveform?
     int waveform = apvts.getRawParameterValue("waveform")->load();
 
-
-
+    // Actual signal processing
     float omega = FREQUENCY_HZ / SAMPLE_RATE;
     float beta  = betaSliderScalar * scaleBeta(omega);    
     float DC = 0.376f - omega*0.752f; // calculate DC compensation
