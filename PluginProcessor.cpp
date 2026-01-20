@@ -6,6 +6,7 @@
 static float FREQUENCY_HZ = 440.0f;
 Phasor phasor(FREQUENCY_HZ);
 float prevOutput = 0.0f;
+float prevOutput2 = 0.0f;
 
 // INPUT HANDLING
 juce::AudioProcessorValueTreeState::ParameterLayout
@@ -41,7 +42,7 @@ AudioPluginAudioProcessor::createParameterLayout()
     params.push_back(std::make_unique<juce::AudioParameterChoice>(
         "waveform",
         "Waveform",
-        juce::StringArray { "Saw", "Pulse" },
+        juce::StringArray { "Saw", "Pulse", "Square" },
         0 // default = Saw
     ));
 
@@ -202,6 +203,9 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     float DC = 0.376f - omega*0.752f; // calculate DC compensation
     float norm = 1.0f - 2.0f*omega; // calculate normalization
 
+    float const a0 = 2.5f; // precalculated coeffs
+    float const a1 = -1.5f; // for HF compensation
+
     for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
     {
         // SAW
@@ -228,7 +232,24 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         }
         // SQUARE
         else {
-            float phase = 0.0;
+            float phasorOutput = phasor();
+
+            // First saw
+            float phase1 = phaseWrap(phasorOutput + (beta * prevOutput));
+            float saw1 = (sin7(phase1) + prevOutput) * 0.5f;
+            prevOutput = saw1;
+
+            // Second saw
+            float phase2 = phaseWrap(phasorOutput + (beta * prevOutput2) + 0.5);
+            float saw2 = (sin7(phase2) + prevOutput2) * 0.5f;
+            prevOutput2 = saw2;
+
+            // Subtract
+            float current = saw1 - saw2;
+            current *= norm;
+
+            for (int channel = 0; channel < totalNumInputChannels; ++channel)
+                buffer.getWritePointer(channel)[sample] = (current * gainLinear * 0.6);
         }
     }
 }

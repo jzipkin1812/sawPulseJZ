@@ -32,7 +32,7 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
     addAndMakeVisible(filterSlider);
 
     // Slider labels
-    freqLabel.setText("Frequency", juce::dontSendNotification);
+    freqLabel.setText("Frequency (Hz)", juce::dontSendNotification);
     freqLabel.setJustificationType(juce::Justification::centred);
     freqLabel.attachToComponent(&freqSlider, false);
     addAndMakeVisible(freqLabel);
@@ -60,7 +60,8 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
 
     // Waveform selector
     waveformBox.addItem("Saw", 1);
-    waveformBox.addItem("Pulse", 2);
+    waveformBox.addItem("Impulse (Squared Output)", 2);
+    waveformBox.addItem("Square (Saw Subtraction)", 3);
     addAndMakeVisible(waveformBox);
     waveformAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>
         (p.apvts, "waveform", waveformBox);
