@@ -1,5 +1,53 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "Phasor.h"
+#include <iostream>
+
+static float FREQUENCY_HZ = 440.0f;
+Phasor phasor(FREQUENCY_HZ);
+float prevOutput = 0.0f;
+
+// INPUT HANDLING
+juce::AudioProcessorValueTreeState::ParameterLayout
+AudioPluginAudioProcessor::createParameterLayout()
+{
+    std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
+
+    // Frequency (Hz)
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(
+        "frequency",
+        "Frequency",
+        juce::NormalisableRange<float>(20.0f, 2000.0f, 0.01f, 0.5f),
+        440.0f
+    ));
+
+    // Output gain (dB)
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(
+        "outputGain",
+        "Output Gain",
+        juce::NormalisableRange<float>(-40.0f, 6.0f, 0.01f),
+        -20.0f
+    ));
+
+    // Filter (scalar)
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(
+        "filter",
+        "Filter",
+        juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f),
+        0.5f
+    ));
+
+    // Saw, Square, or Impulse?
+    params.push_back(std::make_unique<juce::AudioParameterChoice>(
+    "waveform",
+    "Waveform",
+    juce::StringArray { "Saw", "Pulse", "Square" },
+    0 // default = Saw
+    ));
+
+    return { params.begin(), params.end() };
+}
+
 
 //==============================================================================
 AudioPluginAudioProcessor::AudioPluginAudioProcessor()
@@ -10,7 +58,9 @@ AudioPluginAudioProcessor::AudioPluginAudioProcessor()
                       #endif
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
-                       )
+                       ),
+                       apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
+
 {
 }
 
@@ -145,11 +195,53 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // the samples and the outer loop is handling the channels.
     // Alternatively, you can process the samples with the channels
     // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
+
+    // Set frequency
+    FREQUENCY_HZ = apvts.getRawParameterValue("frequency")->load();
+    phasor.frequency(FREQUENCY_HZ);
+    // Set gain
+    auto gainDb = apvts.getRawParameterValue("outputGain")->load();
+    float gainLinear = juce::Decibels::decibelsToGain(gainDb);
+    // Set scalar for harmonics
+    float betaSliderScalar = apvts.getRawParameterValue("filter")->load();
+    // Saw, Impulse, Square?
+    int waveform = apvts.getRawParameterValue("waveform")->load();
+
+
+
+    float omega = FREQUENCY_HZ / SAMPLE_RATE;
+    float beta  = betaSliderScalar * scaleBeta(omega);    
+    float DC = 0.376f - omega*0.752f; // calculate DC compensation
+    float norm = 1.0f - 2.0f*omega; // calculate normalization
+
+    for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
     {
-        auto* channelData = buffer.getWritePointer (channel);
-        juce::ignoreUnused (channelData);
-        // ..do something to the data...
+        // SAW
+        if (waveform == 0) {
+            float phase = phaseWrap(phasor() + (beta * prevOutput));
+            float current = (prevOutput + sin7(phase)) * 0.5f;
+            current = (current + DC) * norm;
+
+            prevOutput = current;
+
+            for (int channel = 0; channel < totalNumInputChannels; ++channel)
+                buffer.getWritePointer(channel)[sample] = (current * gainLinear);
+        }
+        // IMPULSE
+        else if (waveform == 1) {
+            float phase = phaseWrap(phasor() + (beta * prevOutput * prevOutput));
+            float current = (prevOutput * 0.45f + sin7(phase) * 0.55f);
+            current = (current + DC) * norm;
+
+            prevOutput = current;
+
+            for (int channel = 0; channel < totalNumInputChannels; ++channel)
+                buffer.getWritePointer(channel)[sample] = (current * gainLinear);
+        }
+        // SQUARE
+        else {
+            float phase = 0.0;
+        }
     }
 }
 
