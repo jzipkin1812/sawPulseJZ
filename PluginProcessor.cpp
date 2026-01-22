@@ -187,15 +187,15 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     // Parameter processing
     // Set frequency
-    FREQUENCY_HZ = apvts.getRawParameterValue("frequency")->load();
+    FREQUENCY_HZ = apvts.getParameter("frequency")->getValue();
     phasor.frequency(FREQUENCY_HZ);
     // Set gain
-    float gainDb = apvts.getRawParameterValue("outputGain")->load();
+    float gainDb = apvts.getParameter("outputGain")->getValue();
     float gainLinear = juce::Decibels::decibelsToGain(gainDb);
     // Set scalar for harmonics
-    float betaSliderScalar = apvts.getRawParameterValue("filter")->load();
+    float betaSliderScalar = apvts.getParameter("filter")->getValue();
     // Which waveform?
-    int waveform = apvts.getRawParameterValue("waveform")->load();
+    int waveform = (int)(apvts.getParameter("waveform")->getValue());
 
     // Actual signal processing
     float omega = FREQUENCY_HZ / SAMPLE_RATE;
@@ -203,8 +203,9 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     float DC = 0.376f - omega*0.752f; // calculate DC compensation
     float norm = 1.0f - 2.0f*omega; // calculate normalization
 
-    float const a0 = 2.5f; // precalculated coeffs
-    float const a1 = -1.5f; // for HF compensation
+    // Question for Prof: How to properly use these for the HF filter?
+    // float const a0 = 2.5f; // precalculated coeffs
+    // float const a1 = -1.5f; // for HF compensation
 
     for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
     {
@@ -240,7 +241,7 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
             prevOutput = saw1;
 
             // Second saw
-            float phase2 = phaseWrap(phasorOutput + (beta * prevOutput2) + 0.5);
+            float phase2 = phaseWrap(phasorOutput + (beta * prevOutput2) + 0.5f);
             float saw2 = (sin7(phase2) + prevOutput2) * 0.5f;
             prevOutput2 = saw2;
 
@@ -249,7 +250,7 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
             current *= norm;
 
             for (int channel = 0; channel < totalNumInputChannels; ++channel)
-                buffer.getWritePointer(channel)[sample] = (current * gainLinear * 0.6);
+                buffer.getWritePointer(channel)[sample] = (current * gainLinear * 0.6f);
         }
     }
 }
