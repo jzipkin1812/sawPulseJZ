@@ -189,15 +189,15 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     // Parameter processing
     // Set frequency
-    float FREQUENCY_HZ = apvts.getParameter("frequency")->getValue();
+    float FREQUENCY_HZ = apvts.getRawParameterValue("frequency")->load();
     phasor.frequency(FREQUENCY_HZ);
     // Set gain
-    float gainDb = apvts.getParameter("outputGain")->getValue();
+    float gainDb = apvts.getRawParameterValue("outputGain")->load();
     float gainLinear = juce::Decibels::decibelsToGain(gainDb);
     // Set scalar for harmonics
-    float betaSliderScalar = apvts.getParameter("filter")->getValue();
+    float betaSliderScalar = apvts.getRawParameterValue("filter")->load();
     // Which waveform?
-    int waveform = (int)(apvts.getParameter("waveform")->getValue());
+    int waveform = (int)(apvts.getRawParameterValue("waveform")->load());
 
     // Actual signal processing
     float omega = FREQUENCY_HZ / 44100.0f;
@@ -225,9 +225,8 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
             prevOutput = current;
         }
         // IMPULSE
-        // QUESTION: Why is this one noisy and the others are not?
         else if (waveform == 1) {
-            float phase = phaseWrap(phasor() + (beta * prevOutput * prevOutput));
+            float phase = phaseWrap(phasor() + ((beta / 2.0f) * prevOutput * prevOutput));
             current = (prevOutput * 0.45f + sin7(phase) * 0.55f);
             current = (current + DC) * norm;
 
