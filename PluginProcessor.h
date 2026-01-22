@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Phasor.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 
 //==============================================================================
@@ -51,4 +52,8 @@ private:
     // Input handling for sliders
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
+    // History variables for the waveforms
+    float prevOutput;
+    float prevOutput2;
+    Phasor phasor;
 };

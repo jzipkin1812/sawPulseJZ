@@ -3,11 +3,6 @@
 #include "Phasor.h"
 #include <iostream>
 
-static float FREQUENCY_HZ = 440.0f;
-Phasor phasor(FREQUENCY_HZ);
-float prevOutput = 0.0f;
-float prevOutput2 = 0.0f;
-
 // INPUT HANDLING
 juce::AudioProcessorValueTreeState::ParameterLayout
 AudioPluginAudioProcessor::createParameterLayout()
@@ -63,6 +58,9 @@ AudioPluginAudioProcessor::AudioPluginAudioProcessor()
                        apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
 
 {
+    phasor.frequency(440.0);
+    prevOutput = 0.0f;
+    prevOutput2 = 0.0f;
 }
 
 AudioPluginAudioProcessor::~AudioPluginAudioProcessor()
@@ -140,6 +138,10 @@ void AudioPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPer
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
     juce::ignoreUnused (sampleRate, samplesPerBlock);
+    // prevOutput = 0.0f;
+    // prevOutput2 = 0.0f;
+    // FREQUENCY_HZ = 440.0f;
+    // phasor = Phasor(440.0f);
 }
 
 void AudioPluginAudioProcessor::releaseResources()
@@ -187,7 +189,7 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     // Parameter processing
     // Set frequency
-    FREQUENCY_HZ = apvts.getParameter("frequency")->getValue();
+    float FREQUENCY_HZ = apvts.getParameter("frequency")->getValue();
     phasor.frequency(FREQUENCY_HZ);
     // Set gain
     float gainDb = apvts.getParameter("outputGain")->getValue();
@@ -198,38 +200,38 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     int waveform = (int)(apvts.getParameter("waveform")->getValue());
 
     // Actual signal processing
-    float omega = FREQUENCY_HZ / SAMPLE_RATE;
+    float omega = FREQUENCY_HZ / 44100.0f;
     float beta  = betaSliderScalar * scaleBeta(omega);    
     float DC = 0.376f - omega*0.752f; // calculate DC compensation
     float norm = 1.0f - 2.0f*omega; // calculate normalization
 
-    // Question for Prof: How to properly use these for the HF filter?
+    // QUESTION for Prof: How to properly use these for the HF filter?
+    // I tried to copy the pseudocode from the paper, but whenever I tried I just got noise.
+    // I think it's because I don't conceptually understand why this particular math
+    // corresponds to a HF filter.
     // float const a0 = 2.5f; // precalculated coeffs
     // float const a1 = -1.5f; // for HF compensation
+
+    float current;
 
     for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
     {
         // SAW
         if (waveform == 0) {
             float phase = phaseWrap(phasor() + (beta * prevOutput));
-            float current = (prevOutput + sin7(phase)) * 0.5f;
+            current = (prevOutput + sin7(phase)) * 0.5f;
             current = (current + DC) * norm;
 
             prevOutput = current;
-
-            for (int channel = 0; channel < totalNumInputChannels; ++channel)
-                buffer.getWritePointer(channel)[sample] = (current * gainLinear);
         }
         // IMPULSE
+        // QUESTION: Why is this one noisy and the others are not?
         else if (waveform == 1) {
             float phase = phaseWrap(phasor() + (beta * prevOutput * prevOutput));
-            float current = (prevOutput * 0.45f + sin7(phase) * 0.55f);
+            current = (prevOutput * 0.45f + sin7(phase) * 0.55f);
             current = (current + DC) * norm;
 
             prevOutput = current;
-
-            for (int channel = 0; channel < totalNumInputChannels; ++channel)
-                buffer.getWritePointer(channel)[sample] = (current * gainLinear);
         }
         // SQUARE
         else {
@@ -246,12 +248,12 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
             prevOutput2 = saw2;
 
             // Subtract
-            float current = saw1 - saw2;
-            current *= norm;
-
-            for (int channel = 0; channel < totalNumInputChannels; ++channel)
-                buffer.getWritePointer(channel)[sample] = (current * gainLinear * 0.6f);
+            current = saw1 - saw2;
+            current *= norm * 0.6f;
         }
+        for (int channel = 0; channel < totalNumInputChannels; ++channel)
+            buffer.getWritePointer(channel)[sample] = (current * gainLinear);
+
     }
 }
 

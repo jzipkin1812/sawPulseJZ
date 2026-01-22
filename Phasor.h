@@ -1,17 +1,18 @@
 // Some of this code was copied from Karl Yerkes' starter code at 
 // https://github.com/kybr/Badass-Toy/blob/main/PluginProcessor.cpp
 
+#pragma once
 #include <cmath>
-static const float SAMPLE_RATE = 44100;
 
 class Phasor {
     float frequency_;
     float offset_;
     float phase_;
+    const float sample_rate_;
 
     public:
-    Phasor(float hertz, float offset = 0)
-        : frequency_(hertz / SAMPLE_RATE), offset_(offset), phase_(0) {}
+    Phasor(float hertz = 0.0f, float sample_rate = 44100.0f, float offset = 0.0f)
+        : frequency_(hertz / sample_rate), sample_rate_(sample_rate), offset_(offset), phase_(0) {}
 
     float operator()() 
     {
@@ -20,7 +21,7 @@ class Phasor {
 
     void frequency(float hertz) 
     {
-        frequency_ = hertz / SAMPLE_RATE;
+        frequency_ = hertz / sample_rate_;
     }
 
     float process() {
@@ -38,7 +39,7 @@ class Phasor {
 
     void incFrequency(float changeHz)
     {
-        frequency_ += changeHz / SAMPLE_RATE;
+        frequency_ += changeHz / sample_rate_;
     }
 };
 
