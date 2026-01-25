@@ -177,8 +177,37 @@ bool AudioPluginAudioProcessor::isBusesLayoutSupported (const BusesLayout& layou
 void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                                               juce::MidiBuffer& midiMessages)
 {
-    juce::ignoreUnused (midiMessages);
+    // Handle MIDI input; determine whether we're playing and what note
+    int currentNote = -1;
+    float FREQUENCY_HZ = 0.0;
+    float velocity = 0.0;
+    for (const auto metadata : midiMessages)
+    { 
+        const auto msg = metadata.getMessage();
 
+        if (msg.isNoteOn())
+        {
+            currentNote = msg.getNoteNumber();
+            FREQUENCY_HZ = msg.getMidiNoteInHertz(currentNote);
+            velocity = msg.getVelocity();
+
+            resetOscillator();
+        }
+        else if (msg.isNoteOff())
+        {
+            if (msg.getNoteNumber() == currentNote)
+                currentNote = -1;
+        }
+    }
+
+    // No midi note = no playback
+    if (currentNote < 0)
+    {
+        buffer.clear();
+        return;
+    }
+    
+    // Declare channel data
     juce::ScopedNoDenormals noDenormals;
     int totalNumInputChannels  = getTotalNumInputChannels();
     int totalNumOutputChannels = getTotalNumOutputChannels();
@@ -189,7 +218,7 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     // Parameter processing
     // Set frequency
-    float FREQUENCY_HZ = apvts.getRawParameterValue("frequency")->load();
+    // float FREQUENCY_HZ = apvts.getRawParameterValue("frequency")->load();
     phasor.frequency(FREQUENCY_HZ);
     // Set gain
     float gainDb = apvts.getRawParameterValue("outputGain")->load();
@@ -290,7 +319,6 @@ void AudioPluginAudioProcessor::setStateInformation (const void* data, int sizeI
         if (xmlState->hasTagName(apvts.state.getType()))
             apvts.replaceState(juce::ValueTree::fromXml(*xmlState));
 }
-
 //==============================================================================
 // This creates new instances of the plugin..
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

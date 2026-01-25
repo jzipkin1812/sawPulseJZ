@@ -13,3 +13,5 @@ CMakeUserPresets.json
 .vscode/
 build/
 .vs/
+build-debug/
+build-release/

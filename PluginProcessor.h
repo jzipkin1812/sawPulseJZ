@@ -56,4 +56,12 @@ private:
     float prevOutput;
     float prevOutput2;
     Phasor phasor;
+
+    // Reset the oscillator at the beginning of MIDI note input
+    void resetOscillator()
+    {
+        prevOutput = 0.0f;
+        prevOutput2 = 0.0f;
+    }
+
 };
