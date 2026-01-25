@@ -57,6 +57,11 @@ private:
     float prevOutput2;
     Phasor phasor;
 
+    // MIDI state variables
+    int currentNote;
+    float FREQUENCY_HZ;
+    float velocity;
+
     // Reset the oscillator at the beginning of MIDI note input
     void resetOscillator()
     {

@@ -58,9 +58,12 @@ AudioPluginAudioProcessor::AudioPluginAudioProcessor()
                        apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
 
 {
+    FREQUENCY_HZ = 440.0;
     phasor.frequency(440.0);
     prevOutput = 0.0f;
     prevOutput2 = 0.0f;
+    currentNote = -1;
+    velocity = 0.0;
 }
 
 AudioPluginAudioProcessor::~AudioPluginAudioProcessor()
@@ -178,9 +181,6 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                                               juce::MidiBuffer& midiMessages)
 {
     // Handle MIDI input; determine whether we're playing and what note
-    int currentNote = -1;
-    float FREQUENCY_HZ = 0.0;
-    float velocity = 0.0;
     for (const auto metadata : midiMessages)
     { 
         const auto msg = metadata.getMessage();
@@ -188,7 +188,7 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         if (msg.isNoteOn())
         {
             currentNote = msg.getNoteNumber();
-            FREQUENCY_HZ = msg.getMidiNoteInHertz(currentNote);
+            FREQUENCY_HZ = (float)(msg.getMidiNoteInHertz(currentNote));
             velocity = msg.getVelocity();
 
             resetOscillator();
@@ -223,6 +223,7 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // Set gain
     float gainDb = apvts.getRawParameterValue("outputGain")->load();
     float gainLinear = juce::Decibels::decibelsToGain(gainDb);
+    float velocityLinear = ((float)(velocity) / 127.0f);
     // Set scalar for harmonics
     float betaSliderScalar = apvts.getRawParameterValue("filter")->load();
     // Which waveform?
@@ -233,14 +234,6 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     float beta  = betaSliderScalar * scaleBeta(omega);    
     float DC = 0.376f - omega*0.752f; // calculate DC compensation
     float norm = 1.0f - 2.0f*omega; // calculate normalization
-
-    // QUESTION for Prof: How to properly use these for the HF filter?
-    // I tried to copy the pseudocode from the paper, but whenever I tried I just got noise.
-    // I think it's because I don't conceptually understand why this particular math
-    // corresponds to a HF filter.
-    // float const a0 = 2.5f; // precalculated coeffs
-    // float const a1 = -1.5f; // for HF compensation
-
     float current;
 
     for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
@@ -279,8 +272,8 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
             current = saw1 - saw2;
             current *= norm * 0.6f;
         }
-        for (int channel = 0; channel < totalNumInputChannels; ++channel)
-            buffer.getWritePointer(channel)[sample] = (current * gainLinear);
+        for (int channel = 0; channel < totalNumOutputChannels; ++channel)
+            buffer.getWritePointer(channel)[sample] = (current * gainLinear * velocityLinear);
 
     }
 }

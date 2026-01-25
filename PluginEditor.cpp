@@ -114,7 +114,6 @@ void AudioPluginAudioProcessorEditor::resized()
 
     // Waveform selector box
     auto bottom = getLocalBounds().reduced(20);
-    bottom.removeFromTop(getHeight() / 1.6);
-    auto w = bottom.getWidth() / 4;
+    bottom.removeFromTop(getHeight() / 1.6f);
     waveformBox.setBounds(bottom.removeFromTop(30));
 }

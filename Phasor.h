@@ -6,13 +6,13 @@
 
 class Phasor {
     float frequency_;
+    const float sample_rate_;
     float offset_;
     float phase_;
-    const float sample_rate_;
 
     public:
     Phasor(float hertz = 0.0f, float sample_rate = 44100.0f, float offset = 0.0f)
-        : frequency_(hertz / sample_rate), sample_rate_(sample_rate), offset_(offset), phase_(0) {}
+        : frequency_(hertz / sample_rate), offset_(offset), sample_rate_(sample_rate), phase_(0) {}
 
     float operator()() 
     {
