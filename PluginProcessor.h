@@ -2,7 +2,7 @@
 
 #include "Phasor.h"
 #include <juce_audio_processors/juce_audio_processors.h>
-
+#include "quasi.h"
 //==============================================================================
 class AudioPluginAudioProcessor final : public juce::AudioProcessor
 {
@@ -52,21 +52,11 @@ private:
     // Input handling for sliders
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
-    // History variables for the waveforms
-    float prevOutput;
-    float prevOutput2;
-    Phasor phasor;
-
     // MIDI state variables
     int currentNote;
-    float FREQUENCY_HZ;
     float velocity;
 
-    // Reset the oscillator at the beginning of MIDI note input
-    void resetOscillator()
-    {
-        prevOutput = 0.0f;
-        prevOutput2 = 0.0f;
-    }
+    // Container for waveform
+    Quasi quasiWaveform;
 
 };

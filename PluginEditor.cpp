@@ -84,7 +84,7 @@ void AudioPluginAudioProcessorEditor::paint (juce::Graphics& g)
         juce::Colour::fromRGB(12, 12, 56),
         juce::Point<float>(0.0, 0.0),
         juce::Colour::fromRGB(100, 0, 160),
-        juce::Point<float>(getWidth(), getHeight()),
+        juce::Point<float>((float)getWidth(), (float)getHeight()),
         false
     );
 
@@ -114,6 +114,6 @@ void AudioPluginAudioProcessorEditor::resized()
 
     // Waveform selector box
     auto bottom = getLocalBounds().reduced(20);
-    bottom.removeFromTop(getHeight() / 1.6f);
+    bottom.removeFromTop((int)((float)(getHeight()) / 1.6f));
     waveformBox.setBounds(bottom.removeFromTop(30));
 }

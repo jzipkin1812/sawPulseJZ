@@ -55,13 +55,10 @@ AudioPluginAudioProcessor::AudioPluginAudioProcessor()
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
                        ),
-                       apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
+                       apvts(*this, nullptr, "PARAMETERS", createParameterLayout()),
+                       quasiWaveform(44100.0f, 0.5f, 440.0)
 
 {
-    FREQUENCY_HZ = 440.0;
-    phasor.frequency(440.0);
-    prevOutput = 0.0f;
-    prevOutput2 = 0.0f;
     currentNote = -1;
     velocity = 0.0;
 }
@@ -188,10 +185,10 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         if (msg.isNoteOn())
         {
             currentNote = msg.getNoteNumber();
-            FREQUENCY_HZ = (float)(msg.getMidiNoteInHertz(currentNote));
+            quasiWaveform.setFrequency((float)(msg.getMidiNoteInHertz(currentNote)));
             velocity = msg.getVelocity();
 
-            resetOscillator();
+            quasiWaveform.resetOscillator();
         }
         else if (msg.isNoteOff())
         {
@@ -219,61 +216,24 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // Parameter processing
     // Set frequency
     // float FREQUENCY_HZ = apvts.getRawParameterValue("frequency")->load();
-    phasor.frequency(FREQUENCY_HZ);
+    // quasiWaveform.setFrequency(FREQUENCY_HZ);
     // Set gain
     float gainDb = apvts.getRawParameterValue("outputGain")->load();
     float gainLinear = juce::Decibels::decibelsToGain(gainDb);
     float velocityLinear = ((float)(velocity) / 127.0f);
     // Set scalar for harmonics
     float betaSliderScalar = apvts.getRawParameterValue("filter")->load();
+    quasiWaveform.setVirtualFilter(betaSliderScalar);
     // Which waveform?
     int waveform = (int)(apvts.getRawParameterValue("waveform")->load());
+    quasiWaveform.setWaveform(waveform);
 
     // Actual signal processing
-    float omega = FREQUENCY_HZ / 44100.0f;
-    float beta  = betaSliderScalar * scaleBeta(omega);    
-    float DC = 0.376f - omega*0.752f; // calculate DC compensation
-    float norm = 1.0f - 2.0f*omega; // calculate normalization
-    float current;
-
     for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
     {
-        // SAW
-        if (waveform == 0) {
-            float phase = phaseWrap(phasor() + (beta * prevOutput));
-            current = (prevOutput + sin7(phase)) * 0.5f;
-            current = (current + DC) * norm;
-
-            prevOutput = current;
-        }
-        // IMPULSE
-        else if (waveform == 1) {
-            float phase = phaseWrap(phasor() + ((beta / 2.0f) * prevOutput * prevOutput));
-            current = (prevOutput * 0.45f + sin7(phase) * 0.55f);
-            current = (current + DC) * norm;
-
-            prevOutput = current;
-        }
-        // SQUARE
-        else {
-            float phasorOutput = phasor();
-
-            // First saw
-            float phase1 = phaseWrap(phasorOutput + (beta * prevOutput));
-            float saw1 = (sin7(phase1) + prevOutput) * 0.5f;
-            prevOutput = saw1;
-
-            // Second saw
-            float phase2 = phaseWrap(phasorOutput + (beta * prevOutput2) + 0.5f);
-            float saw2 = (sin7(phase2) + prevOutput2) * 0.5f;
-            prevOutput2 = saw2;
-
-            // Subtract
-            current = saw1 - saw2;
-            current *= norm * 0.6f;
-        }
+        float outputSample = quasiWaveform();
         for (int channel = 0; channel < totalNumOutputChannels; ++channel)
-            buffer.getWritePointer(channel)[sample] = (current * gainLinear * velocityLinear);
+            buffer.getWritePointer(channel)[sample] = (outputSample * gainLinear * velocityLinear);
 
     }
 }

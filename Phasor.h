@@ -12,7 +12,14 @@ class Phasor {
 
     public:
     Phasor(float hertz = 0.0f, float sample_rate = 44100.0f, float offset = 0.0f)
-        : frequency_(hertz / sample_rate), offset_(offset), sample_rate_(sample_rate), phase_(0) {}
+        : frequency_(hertz / sample_rate), sample_rate_(sample_rate), offset_(offset), phase_(0) {}
+
+    Phasor& operator=(Phasor& other) {
+        this->frequency_ = other.frequency_;
+        this->offset_ = other.offset_;
+        this->phase_ = other.phase_;
+        return(*this);
+    }
 
     float operator()() 
     {
@@ -47,7 +54,8 @@ class Phasor {
 inline float sin7(float x) {
     // 7 multiplies + 7 addition/subtraction
     // 14 operations
-    return x * (x * (x * (x * (x * (x * (66.5723768716453 * x - 233.003319050759) + 275.754490892928) - 106.877929605423) + 0.156842000875713) - 9.85899292126983) + 7.25653181200263) - 8.88178419700125e-16;
+    double result = x * (x * (x * (x * (x * (x * (66.5723768716453 * x - 233.003319050759) + 275.754490892928) - 106.877929605423) + 0.156842000875713) - 9.85899292126983) + 7.25653181200263) - (8.88178419700125e-16);
+    return((float)(result));
 }
 
 inline float scaleBeta(float omega)
