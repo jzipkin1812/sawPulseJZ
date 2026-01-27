@@ -1,5 +1,5 @@
-#include "PluginProcessor.h"
-#include "PluginEditor.h"
+#include "QuasiProcessor.h"
+#include "QuasiEditor.h"
 #include <iostream>
 
 // To help me learn the Editor and UI APIs I used ChatGPT. 

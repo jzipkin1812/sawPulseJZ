@@ -1,5 +1,5 @@
-#include "PluginProcessor.h"
-#include "PluginEditor.h"
+#include "QuasiProcessor.h"
+#include "QuasiEditor.h"
 #include "Phasor.h"
 #include <iostream>
 

@@ -69,8 +69,8 @@ juce_add_plugin(JarbinSynth
 
 target_sources(JarbinSynth
     PRIVATE
-        PluginEditor.cpp
-        PluginProcessor.cpp
+        QuasiEditor.cpp
+        QuasiProcessor.cpp
         quasi.cpp)
 
 # `target_compile_definitions` adds some preprocessor definitions to our target. In a Projucer
