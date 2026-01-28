@@ -3,6 +3,7 @@
 
 #pragma once
 #include <cmath>
+#include <vector>
 
 class Phasor {
     float frequency_;
@@ -67,3 +68,31 @@ inline float scaleBeta(float omega)
 inline float phaseWrap(float phase) {
     return(phase - std::floor(phase));
 }
+
+class ArrayFloat : public std::vector<float> {
+    public:
+    float lookup(float index) { 
+        int to_the_left = (int)index;
+        int to_the_right = (to_the_left == (size() - 1)) ? 0 : to_the_left + 1;
+        float t = index - (float)to_the_left;
+        return operator[](to_the_left) * (1 - t) + t * operator[](to_the_right);
+    }
+};
+
+class DelayLine : public ArrayFloat {
+    size_t index = 0;
+    public:
+
+    void write(float value) {
+        operator[](index) = value;
+        index = (index + 1) % size();
+    }
+
+    float read(float samples_ago) {
+        float readIndex = (float)index - samples_ago;
+        if (readIndex < 0) {
+            readIndex += (float)size();
+        }
+        return lookup(readIndex);
+    }
+};

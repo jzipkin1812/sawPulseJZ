@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Phasor.h"
-#include "quasi.h"
 
 class Quasi {
     private:
