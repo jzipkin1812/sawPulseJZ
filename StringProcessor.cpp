@@ -25,19 +25,19 @@ StringPluginAudioProcessor::createParameterLayout()
         -20.0f
     ));
 
-    // Filter (scalar)
+    // Damping (scalar)
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        "filter",
-        "Filter",
-        juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f),
-        0.5f
+        "damping",
+        "Damping",
+        juce::NormalisableRange<float>(-1.0f, 1.0f, 0.01f),
+        1.0f
     ));
 
     // Saw, Square, or Impulse?
     params.push_back(std::make_unique<juce::AudioParameterChoice>(
         "waveform",
         "Waveform",
-        juce::StringArray { "Saw", "Pulse", "Square" },
+        juce::StringArray { "Random Noise", "Sine Wave", "Saw Wave" },
         0 // default = Saw
     ));
 
@@ -56,7 +56,7 @@ StringPluginAudioProcessor::StringPluginAudioProcessor()
                      #endif
                        ),
                        apvts(*this, nullptr, "PARAMETERS", createParameterLayout()),
-                       stringWaveform(44100.0f)
+                       stringWaveform(44100.0f, 1.0f, 0, 4096)
 
 {
     currentNote = -1;
@@ -138,10 +138,6 @@ void StringPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPe
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
     juce::ignoreUnused (sampleRate, samplesPerBlock);
-    // prevOutput = 0.0f;
-    // prevOutput2 = 0.0f;
-    // FREQUENCY_HZ = 440.0f;
-    // phasor = Phasor(440.0f);
 }
 
 void StringPluginAudioProcessor::releaseResources()
@@ -190,18 +186,6 @@ void StringPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
             stringWaveform.pluck();
         }
-        else if (msg.isNoteOff())
-        {
-            if (msg.getNoteNumber() == currentNote)
-                currentNote = -1;
-        }
-    }
-
-    // No midi note = no playback
-    if (currentNote < 0)
-    {
-        buffer.clear();
-        return;
     }
     
     // Declare channel data
@@ -214,17 +198,15 @@ void StringPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         buffer.clear (i, 0, buffer.getNumSamples());
 
     // Parameter processing
-
-    // Set gain
     float gainDb = apvts.getRawParameterValue("outputGain")->load();
     float gainLinear = juce::Decibels::decibelsToGain(gainDb);
     float velocityLinear = ((float)(velocity) / 127.0f);
-    // Set scalar for harmonics
-    float betaSliderScalar = apvts.getRawParameterValue("filter")->load();
-    // Which waveform?
+    float damping = apvts.getRawParameterValue("damping")->load();
     int waveform = (int)(apvts.getRawParameterValue("waveform")->load());
+    stringWaveform.setWaveform(waveform);
+    stringWaveform.setDamping(damping);
 
-    // Actual signal processing
+    // Signal processing (mostly abstracted)
     for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
     {
         float outputSample = stringWaveform();

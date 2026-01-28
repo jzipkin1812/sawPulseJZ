@@ -16,36 +16,41 @@ StringPluginAudioProcessorEditor::StringPluginAudioProcessorEditor (StringPlugin
 {
     juce::ignoreUnused (processorRef);
     // Frequency slider
-    freqSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    freqSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
-    freqSlider.setSkewFactorFromMidPoint(1000.0f);
-    addAndMakeVisible(freqSlider);
+    // freqSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    // freqSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+    // freqSlider.setSkewFactorFromMidPoint(1000.0f);
+    // addAndMakeVisible(freqSlider);
 
     // Gain slider
     gainSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     gainSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
     addAndMakeVisible(gainSlider);
 
-    // Virtual filter slider
-    filterSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    filterSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
-    addAndMakeVisible(filterSlider);
+    // Damping slider
+    dampSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    dampSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+    addAndMakeVisible(dampSlider);
 
     // Slider labels
-    freqLabel.setText("Frequency (Hz)", juce::dontSendNotification);
-    freqLabel.setJustificationType(juce::Justification::centred);
-    freqLabel.attachToComponent(&freqSlider, false);
-    addAndMakeVisible(freqLabel);
+    // freqLabel.setText("Frequency (Hz)", juce::dontSendNotification);
+    // freqLabel.setJustificationType(juce::Justification::centred);
+    // freqLabel.attachToComponent(&freqSlider, false);
+    // addAndMakeVisible(freqLabel);
 
     gainLabel.setText("Output (dB)", juce::dontSendNotification);
     gainLabel.setJustificationType(juce::Justification::centred);
     gainLabel.attachToComponent(&gainSlider, false);
     addAndMakeVisible(gainLabel);
 
-    filterLabel.setText("Filter", juce::dontSendNotification);
-    filterLabel.setJustificationType(juce::Justification::centred);
-    filterLabel.attachToComponent(&filterSlider, false);
-    addAndMakeVisible(filterLabel);
+    dampLabel.setText("Damping", juce::dontSendNotification);
+    dampLabel.setJustificationType(juce::Justification::centred);
+    dampLabel.attachToComponent(&dampSlider, false);
+    addAndMakeVisible(dampLabel);
+
+    waveformLabel.setText("Pluck type", juce::dontSendNotification);
+    waveformLabel.setJustificationType(juce::Justification::centredLeft);
+    waveformLabel.attachToComponent(&waveformBox, false);
+
 
 
     // Attachments for sliders
@@ -55,13 +60,13 @@ StringPluginAudioProcessorEditor::StringPluginAudioProcessorEditor (StringPlugin
     gainAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
         p.apvts, "outputGain", gainSlider);
 
-    filterAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        p.apvts, "filter", filterSlider);
+    dampAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+        p.apvts, "damping", dampSlider);
 
     // Waveform selector
-    waveformBox.addItem("Saw", 1);
-    waveformBox.addItem("Impulse (Squared Output)", 2);
-    waveformBox.addItem("Square (Saw Subtraction)", 3);
+    waveformBox.addItem("Random Noise", 1);
+    waveformBox.addItem("Sine Wave", 2);
+    waveformBox.addItem("Saw Wave", 3);
     addAndMakeVisible(waveformBox);
     waveformAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>
         (p.apvts, "waveform", waveformBox);
@@ -96,7 +101,7 @@ void StringPluginAudioProcessorEditor::paint (juce::Graphics& g)
 
     g.setColour(juce::Colours::white);
     g.setFont(20.0f);
-    g.drawFittedText("THE STRING SYNTHESIZER BY JAVIN", getLocalBounds(), juce::Justification::centredBottom, 1);
+    g.drawFittedText("THE DELUXE STRING SYNTHESIZER BY JARBIN", getLocalBounds(), juce::Justification::centredBottom, 1);
 }
 
 void StringPluginAudioProcessorEditor::resized()
@@ -107,10 +112,10 @@ void StringPluginAudioProcessorEditor::resized()
     auto top = area.removeFromTop(int(area.getHeight() / 1.6));
 
     // Sliders
-    int sliderWidth = top.getWidth() / 3;
-    freqSlider.setBounds(top.removeFromLeft(sliderWidth));
+    int sliderWidth = top.getWidth() / 2;
+
     gainSlider.setBounds(top.removeFromLeft(sliderWidth));
-    filterSlider.setBounds(top.removeFromLeft(sliderWidth));
+    dampSlider.setBounds(top.removeFromLeft(sliderWidth));
 
     // Waveform selector box
     auto bottom = getLocalBounds().reduced(20);

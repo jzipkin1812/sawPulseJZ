@@ -15,18 +15,19 @@ public:
 
     juce::Slider freqSlider;
     juce::Slider gainSlider;
-    juce::Slider filterSlider;
+    juce::Slider dampSlider;
 
     juce::ComboBox waveformBox;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> waveformAttachment;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> freqAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> gainAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> filterAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> dampAttachment;
 
     juce::Label freqLabel;
     juce::Label gainLabel;
-    juce::Label filterLabel;
+    juce::Label dampLabel;
+    juce::Label waveformLabel;
 
 
 
