@@ -27,7 +27,7 @@ float PluckedString::operator()() {
     float y_p   = wavetable.read(delaySamples);
     float y_p_1 = wavetable.read(delaySamples + 1.0f);
 
-    // Karplus–Strong averaging (lowpass = decay)
+    // Karplus–Strong averaging
     float current = damping * 0.5f * (y_p + y_p_1);
 
     // Write back into delay line

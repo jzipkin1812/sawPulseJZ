@@ -2,14 +2,6 @@
 #include "StringEditor.h"
 #include <iostream>
 
-// To help me learn the Editor and UI APIs I used ChatGPT. 
-// It generated some boiler plate code and I modified/wrote my own.
-// Here are the prompts I used:
-// 1. Now let's add sliders to the plugin to change the output DB and frequency
-// 2. What is this avpts thing you keep mentioning? my compiler isn't recognizing it
-// 3. Let's add a button that gives me a boolean variable I can then use to switch between saw and impulse mode
-// 4. Instead of pulse and saw, let's do pulse, saw, and square. I already have the audio processing done, what's an easy way to do the UI
-
 //==============================================================================
 StringPluginAudioProcessorEditor::StringPluginAudioProcessorEditor (StringPluginAudioProcessor& p)
     : AudioProcessorEditor (&p), processorRef (p)
@@ -40,18 +32,14 @@ StringPluginAudioProcessorEditor::StringPluginAudioProcessorEditor (StringPlugin
     gainLabel.setText("Output (dB)", juce::dontSendNotification);
     gainLabel.setJustificationType(juce::Justification::centred);
     gainLabel.attachToComponent(&gainSlider, false);
-    addAndMakeVisible(gainLabel);
 
     dampLabel.setText("Damping", juce::dontSendNotification);
     dampLabel.setJustificationType(juce::Justification::centred);
     dampLabel.attachToComponent(&dampSlider, false);
-    addAndMakeVisible(dampLabel);
 
     waveformLabel.setText("Pluck type", juce::dontSendNotification);
     waveformLabel.setJustificationType(juce::Justification::centredLeft);
     waveformLabel.attachToComponent(&waveformBox, false);
-
-
 
     // Attachments for sliders
     freqAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(

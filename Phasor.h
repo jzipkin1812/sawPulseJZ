@@ -51,7 +51,6 @@ class Phasor {
     }
 };
 
-
 inline float sin7(float x) {
     // 7 multiplies + 7 addition/subtraction
     // 14 operations
