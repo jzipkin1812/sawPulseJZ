@@ -3,10 +3,10 @@
 #include <cstdlib>
 
 // Constructor
-PluckedString::PluckedString(float sRate, float damp, int wave, size_t tableLength) : sampleRate(sRate)
+PluckedString::PluckedString(float sRate, float damp, int wave, size_t tableLength, float hertz) : sampleRate(sRate)
 {
-    this->frequencyHz = 440.0;
-    Phasor created = Phasor(440.0, sampleRate, 0.0);
+    this->frequencyHz = hertz;
+    Phasor created = Phasor(hertz, sampleRate, 0.0);
     this->wavetable = DelayLine();
     this->wavetable.resize(tableLength);
     this->tableSize = tableLength;
