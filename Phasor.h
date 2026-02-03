@@ -4,6 +4,7 @@
 #pragma once
 #include <cmath>
 #include <vector>
+#include <numbers>
 
 class Phasor {
     float frequency_;
@@ -58,6 +59,7 @@ inline float sin7(float x) {
     return((float)(result));
 }
 
+
 inline float scaleBeta(float omega)
 {
     float x = 0.5f - omega;
@@ -71,10 +73,13 @@ inline float phaseWrap(float phase) {
 class ArrayFloat : public std::vector<float> {
     public:
     float lookup(float index) { 
-        int to_the_left = (int)index;
-        int to_the_right = (to_the_left == (size() - 1)) ? 0 : to_the_left + 1;
+        size_t to_the_left = (size_t)index;
+        size_t to_the_right = (to_the_left == (size() - 1)) ? 0 : to_the_left + 1;
         float t = index - (float)to_the_left;
         return operator[](to_the_left) * (1 - t) + t * operator[](to_the_right);
+    }
+    float phasor(float t) { 
+        return lookup(size() * t);
     }
 };
 
@@ -95,3 +100,17 @@ class DelayLine : public ArrayFloat {
         return lookup(readIndex);
     }
 };
+
+inline float sint(float t) {
+    struct TableSine : ArrayFloat {
+        TableSine() {
+        resize(4096);
+        for (size_t i = 0; i < size(); ++i) {
+            at(i) = static_cast<float>(sin((2.0 * std::numbers::pi * i) / static_cast<double>(size())));
+            //printf("%f\n", at(i));
+        }
+        }
+    };
+    static TableSine table;
+    return table.phasor(t);
+}
